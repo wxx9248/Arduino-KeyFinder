@@ -21,8 +21,9 @@ namespace RF
 Mirf nRF24L01(nRF24L01_CE, nRF24L01_CSN);
 
 void init();
-void send(byte *);
-byte *receive();
+void setPower(uint8_t);
+void send(byte);
+byte receive();
 }
 
 namespace System
@@ -67,10 +68,14 @@ void System::judge()
   using RF::nRF24L01;
   using RF::send;
   using RF::receive;
+  using RF::setPower;
 
   byte tmp = 0xff;
 
+  setPower(0x00);
   send(REQ_DETECT);
+  setPower(0x01);
+  
   for (uint8_t i = 0; i < 5; i++)
   {
     if ((tmp = receive()) == RSP_DETECT)
@@ -94,7 +99,11 @@ NOT_FINISHED void System::find()
 {
   using RF::nRF24L01;
   using RF::send;
+  using RF::setPower;
 
+  setPower(0x01);
+
+  
   State = _FIND;
   showState(State);
   delay(3000);
@@ -161,7 +170,7 @@ void System::init()
   showState(State);
 }
 
-NOT_FINISHED void RF::init()
+void RF::init()
 {
   nRF24L01.spi = &MirfHardwareSpi;
   nRF24L01.init();
@@ -171,17 +180,36 @@ NOT_FINISHED void RF::init()
   nRF24L01.config();
 }
 
-void RF::send(byte *buf)
+void RF::send(byte msg)
 {
-  nRF24L01.send(buf);
+  nRF24L01.send(&msg);
   while (nRF24L01.isSending())
     continue;
 }
 
-NOT_FINISHED byte *RF::receive()
+byte RF::receive()
 {
+  byte msg = 0xff;
 
+  if (!nRF24L01.isSending() && nRF24L01.dataReady())
+    nRF24L01.getData(&msg);
+  return msg;
 }
 
+void RF::setPower(uint8_t mode)
+{
+  switch (mode)
+  {
+    case 0x00:          // Low
+      writeRegister();
+      break;
 
+    case 0x01:          // High
+      writeRegister();
+      break;
+
+      default;
+      break;
+  }
+}
 
