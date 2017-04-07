@@ -2,7 +2,6 @@
 #include "Mirf_nRF24L01.h"
 #include "MirfHardwareSpiDriver.h"
 #include "LCD12864RSPI.h"
-#include "MsTimer2.h"
 #include "PortsDefine.h"
 #include "Buzzer.h"
 #include "Pitches.h"
@@ -95,14 +94,14 @@ void System::judge()
   delay(3000);
 }
 
-NOT_FINISHED void System::find()
+void System::find()
 {
   using RF::nRF24L01;
   using RF::send;
   using RF::setPower;
 
   setPower(0x01);
-
+  send(REQ_FIND);
   
   State = _FIND;
   showState(State);
@@ -196,19 +195,19 @@ byte RF::receive()
   return msg;
 }
 
-void RF::setPower(uint8_t mode)
+NOT_FINISHED void RF::setPower(uint8_t mode)
 {
   switch (mode)
   {
     case 0x00:          // Low
-      writeRegister();
+//      nRF24L01.writeRegister();
       break;
 
     case 0x01:          // High
-      writeRegister();
+//      nRF24L01.writeRegister();
       break;
 
-      default;
+      default:
       break;
   }
 }
