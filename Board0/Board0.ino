@@ -1,3 +1,4 @@
+#include <avr/wdt.h>
 #include "Mirf.h"
 #include "Mirf_nRF24L01.h"
 #include "MirfHardwareSpiDriver.h"
@@ -33,6 +34,7 @@ void judge();
 void find();
 void showState(E_State);
 void init();
+void Delay(uint16_t);
 }
 
 void setup()
@@ -52,14 +54,22 @@ void setup()
 void loop()
 {
   if (digitalRead(BUTTON) == HIGH)
+  {
     System::find();
+    wdt_reset();
+  }
 
   if (digitalRead(HC_SR501) == HIGH)
+  {
     System::judge();
+    wdt_reset();
+  }
 
   System::State = System::_DEFAULT;
   System::showState(System::State);
   Serial.println(digitalRead(HC_SR501));
+  wdt_reset();
+  delay(200);
 }
 
 void System::judge()
@@ -74,24 +84,33 @@ void System::judge()
   setPower(0x00);
   send(REQ_DETECT);
   setPower(0x01);
-  
+
+  wdt_reset();
+
   for (uint8_t i = 0; i < 5; i++)
   {
     if ((tmp = receive()) == RSP_DETECT)
     {
       System::State = System::_PASS;
       System::showState(System::State);
+      wdt_reset();
       break;
     }
-    else if (i == 5)
+    else if (i == 4)
     {
       System::State = System::_WARN;
       System::showState(System::State);
+      wdt_reset();
       break;
     }
-    else continue;
+    else
+    {
+      wdt_reset();
+      continue;
+    }
   }
-  delay(3000);
+
+  System::Delay(3000);
 }
 
 void System::find()
@@ -102,10 +121,11 @@ void System::find()
 
   setPower(0x01);
   send(REQ_FIND);
-  
+  wdt_reset();
+
   State = _FIND;
   showState(State);
-  delay(3000);
+  System::Delay(3000);
 }
 
 void System::showState(E_State State)
@@ -123,12 +143,13 @@ void System::showState(E_State State)
   warn.Freq = NOTE_E4;
   warn.Duration = 3000;
 
+  wdt_reset();
+
   switch (State)
   {
     case _INIT:
       LCD12864.clear();
       LCD12864.displayString(0, 0, GBK_str_init);
-      delay(1000);
       digitalWrite(LED_PSTATE, HIGH);
       break;
 
@@ -137,7 +158,6 @@ void System::showState(E_State State)
       digitalWrite(LED_PASS, LOW);
       LCD12864.clear();
       LCD12864.displayString(0, 0, GBK_str_default);
-      delay(200);
       break;
 
     case _WARN:
@@ -167,7 +187,19 @@ void System::init()
 {
   State = _INIT;
   showState(State);
+  wdt_enable(WDTO_1S);
+  System::Delay(1000);
 }
+
+void System::Delay(uint16_t ms)
+{
+  for (uint8_t i = 0; i < ms / 500; i++)
+  {
+    delay(500);
+    wdt_reset();
+  }
+}
+
 
 void RF::init()
 {
@@ -177,13 +209,16 @@ void RF::init()
   nRF24L01.setRADDR(SERVER_ID);
   nRF24L01.payload = sizeof (char);
   nRF24L01.config();
+  //  wdt_reset();
 }
 
 void RF::send(byte msg)
 {
   nRF24L01.send(&msg);
   while (nRF24L01.isSending())
-    continue;
+  {
+    wdt_reset();
+  }
 }
 
 byte RF::receive()
@@ -191,7 +226,10 @@ byte RF::receive()
   byte msg = 0xff;
 
   if (!nRF24L01.isSending() && nRF24L01.dataReady())
+  {
     nRF24L01.getData(&msg);
+    wdt_reset();
+  }
   return msg;
 }
 
@@ -200,14 +238,17 @@ NOT_FINISHED void RF::setPower(uint8_t mode)
   switch (mode)
   {
     case 0x00:          // Low
-//      nRF24L01.writeRegister();
+      //      nRF24L01.writeRegister();
+      wdt_reset();
       break;
 
     case 0x01:          // High
-//      nRF24L01.writeRegister();
+      //      nRF24L01.writeRegister();
+      wdt_reset();
       break;
 
-      default:
+    default:
+      wdt_reset();
       break;
   }
 }
