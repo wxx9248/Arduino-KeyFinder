@@ -25,22 +25,51 @@ byte receive();
 
 namespace System
 {
-void buzz();
+Buzzer myBuzzer(BUZZER);
+void init();
+void warn();
 }
 
 
 void setup()
 {
+  System::init();
+  RF::init();
 }
 
 
 void loop()
 {
+  using System::warn;
+  using RF::send;
+  using RF::receive;
+
+  switch (receive())
+  {
+    case REQ_DETECT:
+      for (uint8_t i = 0; i < 5; i++)
+        send(RSP_DETECT);
+      delayMicroseconds(50);
+      break;
+
+    case REQ_FIND:
+      warn();
+      break;
+
+    default:
+      break;
+  }
 }
 
-void System::buzz()
+void System::init()
 {
-  Buzzer myBuzzer(BUZZER);
+  // Dummy.
+}
+
+void System::warn()
+{
+  using System::myBuzzer;
+
   Note warn;
 
   warn.Freq = NOTE_E4;
