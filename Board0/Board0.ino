@@ -209,16 +209,14 @@ void RF::init()
   nRF24L01.setRADDR(SERVER_ID);
   nRF24L01.payload = sizeof (char);
   nRF24L01.config();
-  //  wdt_reset();
+  wdt_reset();
 }
 
 void RF::send(byte msg)
 {
   nRF24L01.send(&msg);
   while (nRF24L01.isSending())
-  {
     wdt_reset();
-  }
 }
 
 byte RF::receive()
