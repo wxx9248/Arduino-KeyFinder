@@ -64,21 +64,21 @@ void LCD12864RSPI::writeData(const uint8_t command)
 
 void LCD12864RSPI::init(const uint8_t clockPin_in, const uint8_t latchPin_in, const uint8_t dataPin_in)
 {
-	clockPin = clockPin_in;
-	latchPin = latchPin_in;
-	dataPin = dataPin_in;
+  clockPin = clockPin_in;
+  latchPin = latchPin_in;
+  dataPin = dataPin_in;
 
-	pinMode(latchPin, OUTPUT);
-	pinMode(clockPin, OUTPUT);
-	pinMode(dataPin, OUTPUT);
+  pinMode(latchPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);
 
-	digitalWrite(latchPin, LOW);
-	delay();
+  digitalWrite(latchPin, LOW);
+  delay();
 
-	writeCommand(0x30);
-	writeCommand(0x0c);
-	writeCommand(0x01);
-	writeCommand(0x06);
+  writeCommand(0x30);
+  writeCommand(0x0c);
+  writeCommand(0x01);
+  writeCommand(0x06);
 }
 
 
@@ -91,18 +91,18 @@ void LCD12864RSPI::clear(void)
 
 void LCD12864RSPI::displayString(const uint8_t X, uint8_t Y, const char *pstr)
 {
-	switch (X)
-	{
-	case 0:  Y |= 0x80; break;
-	case 1:  Y |= 0x90; break;
-	case 2:  Y |= 0x88; break;
-	case 3:  Y |= 0x98; break;
-	default: break;
-	}
-	writeCommand(Y);
+  switch (X)
+  {
+    case 0:  Y |= 0x80; break;
+    case 1:  Y |= 0x90; break;
+    case 2:  Y |= 0x88; break;
+    case 3:  Y |= 0x98; break;
+    default: break;
+  }
+  writeCommand(Y);
 
-	for (uint8_t i = 0; i < strlen(pstr); i++)
-		writeData(*(pstr + i));
+  for (uint8_t i = 0; i < strlen(pstr); i++)
+    writeData(*(pstr + i));
 }
 
 void LCD12864RSPI::displayString(const uint8_t X, uint8_t Y, const char *pstr, const uint8_t len)
@@ -163,8 +163,8 @@ void LCD12864RSPI::drawFullScreen(const uint8_t *p)
     writeCommand(0x30);
     tmp = ygroup * 16;
 
-	for (uint8_t i = 0; i < 16; i++)
-		writeData(p[tmp++]);
+    for (uint8_t i = 0; i < 16; i++)
+      writeData(p[tmp++]);
   }
 
   writeCommand(0x34);

@@ -1,5 +1,5 @@
 /*************************************************
- * Public Constants
+   Public Constants
  *************************************************/
 #ifndef _PTTCHES_H
 #define _PTTCHES_H

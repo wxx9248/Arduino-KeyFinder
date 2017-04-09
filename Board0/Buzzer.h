@@ -1,6 +1,6 @@
 /*
-*	Joystick driver library for Arduino
-*	by wxx9248
+	Buzzer driver library for Arduino
+	by wxx9248
 */
 
 #ifndef _BUZZER_H
