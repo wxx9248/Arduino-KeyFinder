@@ -1,5 +1,4 @@
 #include <avr/wdt.h>
-#include <stdio.h>
 #include "Mirf.h"
 #include "Mirf_nRF24L01.h"
 #include "MirfHardwareSpiDriver.h"
@@ -11,6 +10,13 @@
 #include "msg.h"
 
 #define NOT_FINISHED
+// #define DEBUG_SYM
+
+#ifdef DEBUG_SYM
+#include <stdio.h>
+#else
+#define printf(format, ...)
+#endif
 
 extern "C"
 {
@@ -36,8 +42,10 @@ void find();
 void showState(E_State);
 void init();
 void Delay(uint16_t);
+#ifdef DEBUG_SYM
 int sputchar(char, struct __file *);
 void printf_begin();
+#endif
 }
 
 void setup()
@@ -210,7 +218,10 @@ void System::init()
 {
   State = _INIT;
   showState(State);
+  
+  #ifdef DEBUG_SYM
   printf_begin();
+  #endif
 
   printf("[%u] %s%s(): System initializing...\r\n", millis(), __func__);
 
@@ -238,6 +249,7 @@ void System::Delay(uint16_t ms)
   }
 }
 
+#ifdef DEBUG_SYM
 int System::sputchar(char c, struct __file *)
 {
   Serial.write(c);
@@ -249,7 +261,7 @@ void System::printf_begin()
   Serial.begin(115200);
   fdevopen(&sputchar, 0);
 }
-
+#endif
 
 void RF::init()
 {

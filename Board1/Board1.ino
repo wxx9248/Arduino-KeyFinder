@@ -1,5 +1,4 @@
 #include <avr/wdt.h>
-#include <stdio.h>
 #include "Mirf.h"
 #include "Mirf_nRF24L01.h"
 #include "MirfHardwareSpiDriver.h"
@@ -10,6 +9,13 @@
 #include "msg.h"
 
 #define NOT_FINISHED
+// #define DEBUG_SYM
+
+#ifdef DEBUG_SYM
+#include <stdio.h>
+#else
+#define printf(format, ...)
+#endif
 
 extern "C"
 {
@@ -29,8 +35,10 @@ namespace System
 {
 void init();
 void warn();
+#ifdef DEBUG_SYM
 int sputchar(char, struct __file *);
 void printf_begin();
+#endif
 }
 
 
@@ -76,7 +84,9 @@ void loop()
 
 void System::init()
 {
+  #ifdef DEBUG_SYM
   printf_begin();
+  #endif
   printf("[%u] %s%s(): System initializing...\r\n", millis(), __func__);
   wdt_enable(WDTO_1S);
   printf("[%u] %s%s(): Watchdog enabled.\r\n", millis(), __func__);
@@ -99,6 +109,8 @@ void System::warn()
     myBuzzer.buzz(&warn);
 }
 
+
+#ifdef DEBUG_SYM
 int System::sputchar(char c, struct __file *)
 {
   Serial.write(c);
@@ -110,6 +122,8 @@ void System::printf_begin()
   Serial.begin(115200);
   fdevopen(&sputchar, 0);
 }
+
+#endif
 
 void RF::init()
 {
