@@ -1,4 +1,5 @@
 #include <avr/wdt.h>
+#include <avr/pgmspace.h>
 #include "Mirf.h"
 #include "Mirf_nRF24L01.h"
 #include "MirfHardwareSpiDriver.h"
@@ -10,7 +11,7 @@
 #include "msg.h"
 
 #define NOT_FINISHED
-// #define DEBUG_SYM
+#define DEBUG_SYM
 
 #ifdef DEBUG_SYM
 #include <stdio.h>
@@ -22,6 +23,9 @@ extern "C"
 {
 #include <string.h>
 }
+
+#define MAX_LENGTH 64
+static char *pstr = new char[MAX_LENGTH];
 
 namespace RF
 {
@@ -37,15 +41,48 @@ namespace System
 {
 enum E_State { _INIT, _DEFAULT, _WARN, _PASS, _FIND } State;
 
+#ifdef DEBUG_SYM
+
+PROGMEM const char strWDTReset[] = "[%u] %s%s(): Watchdog reseted.\r\n";
+PROGMEM const char strRFPMin[] = "[%u] %s%s(): RF: Min output power.\r\n";
+PROGMEM const char strRFPMax[] = "[%u] %s%s(): RF: Max output power.\r\n";
+PROGMEM const char strLCDInit[] = "[%u] %s%s(): LCD Initialized.\r\n";
+PROGMEM const char strBuzzerInit[] = "[%u] %s%s(): Buzzer Initialized.\r\n";
+PROGMEM const char strSysInitScr[] = "[%u] %s%s(): Showing initializing screen...\r\n";
+PROGMEM const char strLCDClear[] = "[%u] %s%s(): LCD cleared.\r\n";
+PROGMEM const char strUsrPrmpt[] = "[%u] %s%s(): Showing user prompt...\r\n";
+PROGMEM const char strLEDInit[] = "[%u] %s%s(): LED of statement lit.\r\n";
+PROGMEM const char strSysDfltScr[] = "[%u] %s%s(): Showing default screen & refreshing screen...\r\n";
+PROGMEM const char strLEDWarnRST[] = "[%u] %s%s(): LED of warning reseted.\r\n";
+PROGMEM const char strLEDOKRST[] = "[%u] %s%s(): LED of OK reseted.\r\n";
+PROGMEM const char strLEDWarn[] = "[%u] %s%s(): LED of warn lit.\r\n";
+PROGMEM const char strBuzz[] = "[%u] %s%s(): Buzzing...\r\n";
+PROGMEM const char strLEDOK[] = "[%u] %s%s(): LED of OK lit.\r\n";
+PROGMEM const char strSysInit[] = "[%u] %s%s(): System initializing...\r\n";
+PROGMEM const char strWDTEnable[] = "[%u] %s%s(): Watchdog enabled.\r\n";
+PROGMEM const char strRFInit[] = "[%u] %s%s(): RF initializing...\r\n";
+PROGMEM const char strRFCn[] = "[%u] %s%s(): Channel = %u.   :P\r\n";
+PROGMEM const char strRFCfg[] = "[%u] %s%s(): RF moduled configured.\r\n";
+PROGMEM const char strSetTAddr[] = "[%u] %s%s(): Set target address.\r\n";
+PROGMEM const char strSndMsg[] = "[%u] %s%s(): Sending message...\r\n";
+PROGMEM const char strWtRsp[] = "[%u] %s%s(): Instruction sent. Waiting for response...\r\n";
+PROGMEM const char strOver[] = "[%u] %s%s(): Complete.\r\n";
+PROGMEM const char strMsgRecv[] = "[%u] %s%s(): Message received.\r\n";
+
+#endif
+
 void judge();
 void find();
 void showState(E_State);
 void init();
 void Delay(uint16_t);
+char *pgm2str(char *);
+
 #ifdef DEBUG_SYM
 int sputchar(char, struct __file *);
 void printf_begin();
 #endif
+
 }
 
 void setup()
@@ -60,20 +97,20 @@ void loop()
   {
     System::find();
     wdt_reset();
-    printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+    printf(System::pgm2str(System::strWDTReset), millis(), __func__);
   }
 
   if (digitalRead(HC_SR501) == HIGH)
   {
     System::judge();
     wdt_reset();
-    printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+    printf(System::pgm2str(System::strWDTReset), millis(), __func__);
   }
 
   System::State = System::_DEFAULT;
   System::showState(System::State);
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
   delay(200);
 }
 
@@ -85,13 +122,13 @@ void System::judge()
   using RF::setPower;
 
   setPower(0x00);
-  printf("[%u] %s%s(): RF: Min output power.\r\n", millis(), __func__);
+
   send(REQ_DETECT);
   setPower(0x01);
-  printf("[%u] %s%s(): RF: Max output power.\r\n", millis(), __func__);
+
 
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
 
   for (uint8_t i = 0; i < 5; i++)
   {
@@ -100,7 +137,7 @@ void System::judge()
       System::State = System::_PASS;
       System::showState(System::State);
       wdt_reset();
-      printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strWDTReset), millis(), __func__);
       break;
     }
     else if (i == 4)
@@ -108,7 +145,7 @@ void System::judge()
       System::State = System::_WARN;
       System::showState(System::State);
       wdt_reset();
-      printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strWDTReset), millis(), __func__);
       break;
     }
     else
@@ -128,10 +165,10 @@ void System::find()
   using RF::setPower;
 
   setPower(0x01);
-  printf("[%u] %s%s(): RF: Max output power.\r\n", millis(), __func__);
+
   send(REQ_FIND);
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
 
   State = _FIND;
   showState(State);
@@ -141,9 +178,9 @@ void System::find()
 void System::showState(E_State State)
 {
   LCD12864RSPI LCD12864(LCD12864_E, LCD12864_RS, LCD12864_RW);
-  printf("[%u] %s%s(): LCD Initialized.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strLCDInit), millis(), __func__);
   Buzzer myBuzzer(BUZZER);
-  printf("[%u] %s%s(): Buzzer Initialized.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strBuzzerInit), millis(), __func__);
 
   const char GBK_str_init[] = { 0x20, 0x20, 0xD5, 0xFD, 0xD4, 0xDA, 0xB3, 0xF5, 0xCA, 0xBC, 0xBB, 0xAF, '\0'};
   const char GBK_str_default[] = { 0xD4, 0xBF, 0xB3, 0xD7, 0xCD, 0xFC, 0xB4, 0xF8, 0xCC, 0xE1, 0xD0, 0xD1, 0xCF, 0xB5, 0xCD, 0xB3, 0x20, 0x20, 0x20, 0x20, 0x20, 0x56, 0x31, 0x2E, 0x30, '\0' };
@@ -156,57 +193,57 @@ void System::showState(E_State State)
   warn.Duration = 3000;
 
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
 
   switch (State)
   {
     case _INIT:
-      printf("[%u] %s%s(): Showing initializing screen...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strSysInitScr), millis(), __func__);
       LCD12864.clear();
-      printf("[%u] %s%s(): LCD cleared.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLCDClear), millis(), __func__);
       LCD12864.displayString(0, 0, GBK_str_init);
-      printf("[%u] %s%s(): Showing user prompt...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strUsrPrmpt), millis(), __func__);
       digitalWrite(LED_PSTATE, HIGH);
-      printf("[%u] %s%s(): LED of statement lit.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLEDInit), millis(), __func__);
       break;
 
     case _DEFAULT:
-      printf("[%u] %s%s(): Showing default screen & refreshing screen...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strSysDfltScr), millis(), __func__);
       digitalWrite(LED_WARN, LOW);
-      printf("[%u] %s%s(): LED of warning reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLEDWarnRST), millis(), __func__);
       digitalWrite(LED_PASS, LOW);
-      printf("[%u] %s%s(): LED of OK reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLEDOKRST), millis(), __func__);
       LCD12864.clear();
-      printf("[%u] %s%s(): LCD cleared.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLCDClear), millis(), __func__);
       LCD12864.displayString(0, 0, GBK_str_default);
-      printf("[%u] %s%s(): Showing user prompt...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strUsrPrmpt), millis(), __func__);
       break;
 
     case _WARN:
       digitalWrite(LED_WARN, HIGH);
-      printf("[%u] %s%s(): LED of warn lit.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLEDWarn), millis(), __func__);
       myBuzzer.buzz(&warn);
-      printf("[%u] %s%s(): Buzzing...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strBuzz), millis(), __func__);
       LCD12864.clear();
-      printf("[%u] %s%s(): LCD cleared.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLCDClear), millis(), __func__);
       LCD12864.displayString(0, 0, GBK_str_warn);
-      printf("[%u] %s%s(): Showing user prompt...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strUsrPrmpt), millis(), __func__);
       break;
 
     case _PASS:
       digitalWrite(LED_PASS, HIGH);
-      printf("[%u] %s%s(): LED of OK lit.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLEDOK), millis(), __func__);
       LCD12864.clear();
-      printf("[%u] %s%s(): LCD cleared.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLCDClear), millis(), __func__);
       LCD12864.displayString(0, 0, GBK_str_pass);
-      printf("[%u] %s%s(): Showing user prompt...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strUsrPrmpt), millis(), __func__);
       break;
 
     case _FIND:
       LCD12864.clear();
-      printf("[%u] %s%s(): LCD cleared.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strLCDClear), millis(), __func__);
       LCD12864.displayString(0, 0, GBK_str_find);
-      printf("[%u] %s%s(): Show user prompt...\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strUsrPrmpt), millis(), __func__);
       break;
 
     default:
@@ -218,24 +255,21 @@ void System::init()
 {
   State = _INIT;
   showState(State);
-  
-  #ifdef DEBUG_SYM
-  printf_begin();
-  #endif
 
-  printf("[%u] %s%s(): System initializing...\r\n", millis(), __func__);
+#ifdef DEBUG_SYM
+  printf_begin();
+#endif
+
+  printf(System::pgm2str(System::strSysInit), millis(), __func__);
 
   pinMode(LED_PSTATE, OUTPUT);
   pinMode(LED_WARN, OUTPUT);
   pinMode(LED_PASS, OUTPUT);
-  printf("[%u] %s%s(): LED pinMode = OUTPUT\r\n", millis(), __func__);
   pinMode(BUTTON, INPUT_PULLUP);
-  printf("[%u] %s%s(): BUTTON pinMode = INPUT_PULLUP\r\n", millis(), __func__);
   pinMode(HC_SR501, INPUT_PULLUP);
-  printf("[%u] %s%s(): HC_SR501 pinMode = INPUT_PULLUP\r\n", millis(), __func__);
 
   wdt_enable(WDTO_1S);
-  printf("[%u] %s%s(): Watchdog enabled.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTEnable), millis(), __func__);
   System::Delay(1000);
 }
 
@@ -245,11 +279,20 @@ void System::Delay(uint16_t ms)
   {
     delay(500);
     wdt_reset();
-    printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+    printf(System::pgm2str(System::strWDTReset), millis(), __func__);
   }
 }
 
+char *System::pgm2str(char *pgmIn)
+{
+  for (uint16_t i = 0; i < MAX_LENGTH; i++)
+    *(pstr + i) = pgm_read_byte(&pgmIn[i]);
+
+  return pstr;
+}
+
 #ifdef DEBUG_SYM
+
 int System::sputchar(char c, struct __file *)
 {
   Serial.write(c);
@@ -265,37 +308,33 @@ void System::printf_begin()
 
 void RF::init()
 {
-  printf("[%u] %s%s(): RF initializing...\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strRFInit), millis(), __func__);
 
   nRF24L01.spi = &MirfHardwareSpi;
-  printf("[%u] %s%s(): SPI initialized.\r\n", millis(), __func__);
   nRF24L01.init();
-  printf("[%u] %s%s(): CE & CSN pin initialized.\r\n", millis(), __func__);
   nRF24L01.setRADDR(SERVER_ID);
-  printf("[%u] %s%s(): Set local address.\r\n", millis(), __func__);
   nRF24L01.payload = sizeof (char);
-  printf("[%u] %s%s(): Data payload = 1 bytes.\r\n", millis(), __func__);
   nRF24L01.channel = 9 + 2 + 4 + 8;
-  printf("[%u] %s%s(): Channel = 9 + 2 + 4 + 8.   :P\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strRFCn), millis(), __func__, "", nRF24L01.channel);
   nRF24L01.config();
-  printf("[%u] %s%s(): RF moduled configured.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strRFCfg), millis(), __func__);
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
 }
 
 void RF::send(byte msg)
 {
   nRF24L01.setTADDR(CLIENT_ID);
-  printf("[%u] %s%s(): Set target address.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strSetTAddr), millis(), __func__);
 
-  printf("[%u] %s%s(): Sending message...\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strSndMsg), millis(), __func__);
   nRF24L01.send(&msg);
-  printf("[%u] %s%s(): Instruction sent. Waiting for response...\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWtRsp), millis(), __func__);
   while (nRF24L01.isSending())
     continue;
-  printf("[%u] %s%s(): Complete.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strOver), millis(), __func__);
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
 }
 
 byte RF::receive()
@@ -305,11 +344,11 @@ byte RF::receive()
   if (!nRF24L01.isSending() && nRF24L01.dataReady())
   {
     nRF24L01.getData(&msg);
-    printf("[%u] %s%s(): Message received.\r\n", millis(), __func__);
+    printf(System::pgm2str(System::strMsgRecv), millis(), __func__);
   }
 
   wdt_reset();
-  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  printf(System::pgm2str(System::strWDTReset), millis(), __func__);
   return msg;
 }
 
@@ -319,19 +358,21 @@ NOT_FINISHED void RF::setPower(uint8_t mode)
   {
     case 0x00:          // Low
       //      nRF24L01.writeRegister();
+      printf(System::pgm2str(System::strRFPMin), millis(), __func__);
       wdt_reset();
-      printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strWDTReset), millis(), __func__);
       break;
 
     case 0x01:          // High
       //      nRF24L01.writeRegister();
+      printf(System::pgm2str(System::strRFPMax), millis(), __func__);
       wdt_reset();
-      printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strWDTReset), millis(), __func__);
       break;
 
     default:
       wdt_reset();
-      printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+      printf(System::pgm2str(System::strWDTReset), millis(), __func__);
       break;
   }
 }
