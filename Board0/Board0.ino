@@ -259,8 +259,6 @@ void RF::init()
   printf("[%u] %s%s(): SPI initialized.\r\n", millis(), __func__);
   nRF24L01.init();
   printf("[%u] %s%s(): CE & CSN pin initialized.\r\n", millis(), __func__);
-  nRF24L01.setTADDR(CLIENT_ID);
-  printf("[%u] %s%s(): Set target address.\r\n", millis(), __func__);
   nRF24L01.setRADDR(SERVER_ID);
   printf("[%u] %s%s(): Set local address.\r\n", millis(), __func__);
   nRF24L01.payload = sizeof (char);
@@ -275,6 +273,9 @@ void RF::init()
 
 void RF::send(byte msg)
 {
+  nRF24L01.setTADDR(CLIENT_ID);
+  printf("[%u] %s%s(): Set target address.\r\n", millis(), __func__);
+
   printf("[%u] %s%s(): Sending message...\r\n", millis(), __func__);
   nRF24L01.send(&msg);
   printf("[%u] %s%s(): Instruction sent. Waiting for response...\r\n", millis(), __func__);
