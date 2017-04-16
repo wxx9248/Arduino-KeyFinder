@@ -17,7 +17,7 @@ void setup()
   nRF24L01.config();
 }
 
-q
+
 void loop()
 {
   if (nRF24L01.dataReady())
