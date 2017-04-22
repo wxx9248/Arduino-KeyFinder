@@ -9,6 +9,7 @@ byte value = 0;
 void setup()
 {
   Serial.begin(115200);
+  Serial.println("Program started.");
   nRF24L01.spi = &MirfHardwareSpi;
   nRF24L01.init();
   nRF24L01.setRADDR((byte *)"FGHIJ");
