@@ -33,8 +33,11 @@ byte receive();
 
 namespace System
 {
+byte msg = 0x00;
+
 void init();
 void warn();
+void IRQ_CALLBACK();
 #ifdef DEBUG_SYM
 int sputchar(char, struct __file *);
 void printf_begin();
@@ -55,27 +58,30 @@ void loop()
   using RF::send;
   using RF::receive;
 
-  switch (receive())
+  if (System::msg)
   {
-    case REQ_DETECT:
-      for (uint8_t i = 0; i < 5; i++)
-      {
-        printf("[%u] %s%s(): Responding message...\r\n", millis(), __func__);
-        send(RSP_DETECT);
+    switch (System::msg)
+    {
+      case REQ_DETECT:
+        for (uint8_t i = 0; i < 5; i++)
+        {
+          printf("[%u] %s%s(): Responding message...\r\n", millis(), __func__);
+          send(RSP_DETECT);
 
-        wdt_reset();
-        printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
-      }
-      delayMicroseconds(50);
-      break;
+          wdt_reset();
+          printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+        }
+        delayMicroseconds(50);
+        break;
 
-    case REQ_FIND:
-      printf("[%u] %s%s(): Received finding message, keeping buzzing...\r\n", millis(), __func__);
-      warn();
-      break;
+      case REQ_FIND:
+        printf("[%u] %s%s(): Received finding message, keeping buzzing...\r\n", millis(), __func__);
+        warn();
+        break;
 
-    default:
-      break;
+      default:
+        break;
+    }
   }
 
   wdt_reset();
@@ -84,10 +90,11 @@ void loop()
 
 void System::init()
 {
-  #ifdef DEBUG_SYM
+#ifdef DEBUG_SYM
   printf_begin();
-  #endif
+#endif
   printf("[%u] %s%s(): System initializing...\r\n", millis(), __func__);
+  attachInterrupt(digitalPinToInterrupt(nRF24L01_IRQ), IRQ_CALLBACK, LOW);
   wdt_enable(WDTO_1S);
   printf("[%u] %s%s(): Watchdog enabled.\r\n", millis(), __func__);
 }
@@ -107,6 +114,14 @@ void System::warn()
   printf("[%u] %s%s(): Buzzing...\r\n", millis(), __func__);
   for (;;)
     myBuzzer.buzz(&warn);
+}
+
+void System::IRQ_CALLBACK()
+{
+  printf("[%u] %s%s(): IRQ trigged.\r\n", millis(), __func__);
+  msg = RF::receive();
+  wdt_reset();
+  printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
 }
 
 
@@ -136,8 +151,8 @@ void RF::init()
   printf("[%u] %s%s(): Set local address.\r\n", millis(), __func__);
   nRF24L01.payload = sizeof (char);
   printf("[%u] %s%s(): Data payload = 1 bytes.\r\n", millis(), __func__);
-  nRF24L01.channel = 9 + 2 + 4 + 8;
-  printf("[%u] %s%s(): Channel = 9 + 2 + 4 + 8.   :P\r\n", millis(), __func__);
+  nRF24L01.channel = 9;
+  printf("[%u] %s%s(): Channel = 9.\r\n", millis(), __func__);
   nRF24L01.config();
   printf("[%u] %s%s(): RF moduled configured.\r\n", millis(), __func__);
   wdt_reset();

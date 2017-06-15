@@ -12,6 +12,7 @@
 #define SCK			    	ICSP-3
 #define SS			    	10
 
+#define nRF24L01_IRQ  2
 #define	nRF24L01_CSN	5
 #define nRF24L01_CE		4
 #define nRF24L01_CSK	SCK
@@ -19,4 +20,5 @@
 #define nRF24L01_MISO	MISO
 
 #define BUZZER        3
+
 

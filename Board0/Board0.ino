@@ -11,7 +11,7 @@
 #include "msg.h"
 
 #define NOT_FINISHED
-#define DEBUG_SYM
+// #define DEBUG_SYM
 
 #ifdef DEBUG_SYM
 #include <stdio.h>
@@ -314,7 +314,7 @@ void RF::init()
   nRF24L01.init();
   nRF24L01.setRADDR(SERVER_ID);
   nRF24L01.payload = sizeof (char);
-  nRF24L01.channel = 9 + 2 + 4 + 8;
+  nRF24L01.channel = 9;
   printf(System::pgm2str(System::strRFCn), millis(), __func__, "", nRF24L01.channel);
   nRF24L01.config();
   printf(System::pgm2str(System::strRFCfg), millis(), __func__);
