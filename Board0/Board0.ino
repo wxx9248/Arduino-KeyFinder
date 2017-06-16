@@ -11,7 +11,7 @@
 #include "msg.h"
 
 #define NOT_FINISHED
- #define DEBUG_SYM
+// #define DEBUG_SYM
 
 #ifdef DEBUG_SYM
 #include <stdio.h>
