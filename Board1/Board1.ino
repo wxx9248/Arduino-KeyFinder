@@ -1,4 +1,4 @@
-#include <avr/wdt.h>
+                                                                                                                                                                                                   #include <avr/wdt.h>
 #include "Mirf.h"
 #include "Mirf_nRF24L01.h"
 #include "MirfHardwareSpiDriver.h"
@@ -9,7 +9,7 @@
 #include "msg.h"
 
 #define NOT_FINISHED
-// #define DEBUG_SYM
+ #define DEBUG_SYM
 
 #ifdef DEBUG_SYM
 #include <stdio.h>
@@ -63,14 +63,11 @@ void loop()
     switch (System::msg)
     {
       case REQ_DETECT:
-        for (uint8_t i = 0; i < 5; i++)
-        {
-          printf("[%u] %s%s(): Responding message...\r\n", millis(), __func__);
-          send(RSP_DETECT);
+        printf("[%u] %s%s(): Responding message...\r\n", millis(), __func__);
+        send(RSP_DETECT);
 
-          wdt_reset();
-          printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
-        }
+        wdt_reset();
+        printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
         delayMicroseconds(50);
         break;
 
@@ -86,6 +83,7 @@ void loop()
 
   wdt_reset();
   printf("[%u] %s%s(): Watchdog reseted.\r\n", millis(), __func__);
+  delay(500);
 }
 
 void System::init()
@@ -151,8 +149,8 @@ void RF::init()
   printf("[%u] %s%s(): Set local address.\r\n", millis(), __func__);
   nRF24L01.payload = sizeof (char);
   printf("[%u] %s%s(): Data payload = 1 bytes.\r\n", millis(), __func__);
-  nRF24L01.channel = 9;
-  printf("[%u] %s%s(): Channel = 9.\r\n", millis(), __func__);
+  nRF24L01.channel = 9 + 2 + 4 + 8;
+  printf("[%u] %s%s(): Channel = %u.\r\n", millis(), __func__, "", nRF24L01.channel);
   nRF24L01.config();
   printf("[%u] %s%s(): RF moduled configured.\r\n", millis(), __func__);
   wdt_reset();
@@ -163,7 +161,6 @@ void RF::send(byte msg)
 {
   nRF24L01.setTADDR(SERVER_ID);
   printf("[%u] %s%s(): Set target address.\r\n", millis(), __func__);
-
   printf("[%u] %s%s(): Sending message...\r\n", millis(), __func__);
   nRF24L01.send(&msg);
   printf("[%u] %s%s(): Instruction sent. Waiting for response...\r\n", millis(), __func__);

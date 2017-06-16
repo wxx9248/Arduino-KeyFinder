@@ -140,7 +140,7 @@ void Mirf::getData(uint8_t * data)
 {
   nrfSpiWrite(R_RX_PAYLOAD, data, true, payload); // Read payload
 
-  // NVI: per product spec, p 67, note c:
+  //  NVI: per product spec, p 67, note c:
   //  "The RX_DR IRQ is asserted by a new packet arrival event. The procedure
   //  for handling this interrupt should be: 1) read payload through SPI,
   //  2) clear RX_DR IRQ, 3) read FIFO_STATUS to check if there are more

@@ -11,7 +11,7 @@
 #include "msg.h"
 
 #define NOT_FINISHED
-// #define DEBUG_SYM
+ #define DEBUG_SYM
 
 #ifdef DEBUG_SYM
 #include <stdio.h>
@@ -61,14 +61,14 @@ PROGMEM const char strLEDOK[] = "[%u] %s%s(): LED of OK lit.\r\n";
 PROGMEM const char strSysInit[] = "[%u] %s%s(): System initializing...\r\n";
 PROGMEM const char strWDTEnable[] = "[%u] %s%s(): Watchdog enabled.\r\n";
 PROGMEM const char strRFInit[] = "[%u] %s%s(): RF initializing...\r\n";
-PROGMEM const char strRFCn[] = "[%u] %s%s(): Channel = %u.   :P\r\n";
+PROGMEM const char strRFCn[] = "[%u] %s%s(): Channel = %u.\r\n";
 PROGMEM const char strRFCfg[] = "[%u] %s%s(): RF moduled configured.\r\n";
 PROGMEM const char strSetTAddr[] = "[%u] %s%s(): Set target address.\r\n";
 PROGMEM const char strSndMsg[] = "[%u] %s%s(): Sending message...\r\n";
 PROGMEM const char strWtRsp[] = "[%u] %s%s(): Instruction sent. Waiting for response...\r\n";
 PROGMEM const char strOver[] = "[%u] %s%s(): Complete.\r\n";
 PROGMEM const char strMsgRecv[] = "[%u] %s%s(): Message received.\r\n";
-
+PROGMEM const char strRFRegVal[] = "[%u] %s%s(): RF_SETUP = %#010x.\r\n";
 #endif
 
 void judge();
@@ -313,8 +313,9 @@ void RF::init()
   nRF24L01.spi = &MirfHardwareSpi;
   nRF24L01.init();
   nRF24L01.setRADDR(SERVER_ID);
+  nRF24L01.setTADDR(CLIENT_ID);
   nRF24L01.payload = sizeof (char);
-  nRF24L01.channel = 9;
+  nRF24L01.channel = 9 + 2 + 4 + 8;
   printf(System::pgm2str(System::strRFCn), millis(), __func__, "", nRF24L01.channel);
   nRF24L01.config();
   printf(System::pgm2str(System::strRFCfg), millis(), __func__);
@@ -324,9 +325,7 @@ void RF::init()
 
 void RF::send(byte msg)
 {
-  nRF24L01.setTADDR(CLIENT_ID);
   printf(System::pgm2str(System::strSetTAddr), millis(), __func__);
-
   printf(System::pgm2str(System::strSndMsg), millis(), __func__);
   nRF24L01.send(&msg);
   printf(System::pgm2str(System::strWtRsp), millis(), __func__);
@@ -352,19 +351,27 @@ byte RF::receive()
   return msg;
 }
 
-NOT_FINISHED void RF::setPower(uint8_t mode)
+void RF::setPower(uint8_t mode)
 {
+  byte REG_RF_SETUP = 0x00;
+  nRF24L01.readRegister(RF_SETUP, &REG_RF_SETUP, 1);
+  printf(System::pgm2str(System::strRFRegVal), millis(), __func__, "", REG_RF_SETUP);
+
   switch (mode)
   {
-    case 0x00:          // Low
-      //      nRF24L01.writeRegister();
+    case 0x00:
+      nRF24L01.configRegister(RF_SETUP, REG_RF_SETUP | RF_PWR);
+      nRF24L01.readRegister(RF_SETUP, &REG_RF_SETUP, 1);
+      printf(System::pgm2str(System::strRFRegVal), millis(), __func__, "", REG_RF_SETUP);
       printf(System::pgm2str(System::strRFPMin), millis(), __func__);
       wdt_reset();
       printf(System::pgm2str(System::strWDTReset), millis(), __func__);
       break;
 
-    case 0x01:          // High
-      //      nRF24L01.writeRegister();
+    case 0x01:
+      nRF24L01.configRegister(RF_SETUP, REG_RF_SETUP & ~RF_PWR);
+      nRF24L01.readRegister(RF_SETUP, &REG_RF_SETUP, 1);
+      printf(System::pgm2str(System::strRFRegVal), millis(), __func__, "", REG_RF_SETUP);
       printf(System::pgm2str(System::strRFPMax), millis(), __func__);
       wdt_reset();
       printf(System::pgm2str(System::strWDTReset), millis(), __func__);

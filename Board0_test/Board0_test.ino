@@ -11,16 +11,16 @@ void setup()
   Serial.begin(115200);
   nRF24L01.spi = &MirfHardwareSpi;
   nRF24L01.init();
-  nRF24L01.setRADDR((byte *)"ABCDE");
+  nRF24L01.setRADDR((byte *)"_SERV");
   nRF24L01.payload = sizeof(value);
-  nRF24L01.channel = 90;
+  nRF24L01.channel = 9 + 2 + 4 + 8;
   nRF24L01.config();
 }
 
 
 void loop()
 {
-  nRF24L01.setTADDR((byte *)"FGHIJ");
+  nRF24L01.setTADDR((byte *)"_CLNT");
   value = random(255);
   nRF24L01.send((byte *)&value);
   Serial.println("Instruction sent.");

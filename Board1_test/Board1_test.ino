@@ -12,9 +12,9 @@ void setup()
   Serial.println("Program started.");
   nRF24L01.spi = &MirfHardwareSpi;
   nRF24L01.init();
-  nRF24L01.setRADDR((byte *)"FGHIJ");
+  nRF24L01.setRADDR((byte *)"_CLNT");
   nRF24L01.payload = sizeof(value);
-  nRF24L01.channel = 90;
+  nRF24L01.channel = 9 + 2 + 4 + 8;
   nRF24L01.config();
 }
 
